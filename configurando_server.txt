@@ -1,0 +1,7 @@
+sudo adduser --shell /usr/bin/CvShell curriculo
+
+
+> CvShell
+#!/bin/bash
+cd /home/empresa
+./curriculo.sh
