@@ -15,10 +15,10 @@ mostrar_certificacao() {
     local cor="$4"
     local descricao="$5"
     
-    echo -e "${BOLD}${cor}🏅 $nome${RESET}"
-    echo -e "   📅 $data | 🎯 Status: $status"
+    typewriter_colored "${BOLD}${cor}🏅 $nome${RESET}" 0.03
+    typewriter_colored "   📅 $data | 🎯 Status: $status" 0.02
     if [[ -n "$descricao" ]]; then
-        echo -e "   💡 $descricao"
+        typewriter_colored "   💡 $descricao" 0.02
     fi
     echo
 }
@@ -39,19 +39,19 @@ mostrar_certificacao \
 
 separator "─" 50 "$CYAN"
 
-echo -e "${BOLD}${BLUE}📚 EM ANDAMENTO:${RESET}"
-echo -e "   ${GREEN}▶${RESET} CompTIA Security+ (previsão: 2025)"
-echo -e "   ${GREEN}▶${RESET} Oracle Database SQL Certified Associate"
-echo -e "   ${GREEN}▶${RESET} Docker Certified Associate"
+typewriter_colored "${BOLD}${BLUE}📚 EM ANDAMENTO:${RESET}" 0.03
+typewriter_colored "   ${GREEN}▶${RESET} CompTIA Security+ (previsão: 2025)" 0.02
+typewriter_colored "   ${GREEN}▶${RESET} Oracle Database SQL Certified Associate" 0.02
+typewriter_colored "   ${GREEN}▶${RESET} Docker Certified Associate" 0.02
 echo
 
 separator "─" 50 "$CYAN"
 
-echo -e "${BOLD}${MAGENTA}🎯 PROJETOS DESTACADOS:${RESET}"
-echo -e "   ${CYAN}💻${RESET} ${BOLD}Currículo Interativo em Bash${RESET} - Este próprio sistema!"
-echo -e "   ${CYAN}🤖${RESET} ${BOLD}Sistema de IA para Análise de Glosas${RESET} - FioSaúde"
-echo -e "   ${CYAN}📱${RESET} ${BOLD}Integração WebView Mobile${RESET} - Aplicação híbrida"
-echo -e "   ${CYAN}🔧${RESET} ${BOLD}Scripts de Automação${RESET} - Otimização de processos"
+typewriter_colored "${BOLD}${MAGENTA}🎯 PROJETOS DESTACADOS:${RESET}" 0.03
+typewriter_colored "   ${CYAN}💻${RESET} ${BOLD}Currículo Interativo em Bash${RESET} - Este próprio sistema!" 0.02
+typewriter_colored "   ${CYAN}🤖${RESET} ${BOLD}Sistema de IA para Análise de Glosas${RESET} - FioSaúde" 0.02
+typewriter_colored "   ${CYAN}📱${RESET} ${BOLD}Integração WebView Mobile${RESET} - Aplicação híbrida" 0.02
+typewriter_colored "   ${CYAN}🔧${RESET} ${BOLD}Scripts de Automação${RESET} - Otimização de processos" 0.02
 echo
 
 box "🚀 Sempre aprendendo e evoluindo!" "$BOLD$GREEN"

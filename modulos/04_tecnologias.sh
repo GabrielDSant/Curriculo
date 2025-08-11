@@ -21,7 +21,7 @@ mostrar_tecnologia() {
         cat "ascii/$arquivo_ascii"
     fi
     
-    echo -e "${WHITE}📝 $descricao${RESET}"
+    typewriter_colored "${WHITE}📝 $descricao${RESET}" 0.02
     
     # Barra de progresso do nível
     echo -ne "${BOLD}⭐ Nível: ${RESET}"

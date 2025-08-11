@@ -75,6 +75,28 @@ typewriter() {
     echo -e "${RESET}"
 }
 
+# Função typewriter aprimorada para textos com cores
+typewriter_colored() {
+    local text="$1"
+    local delay="${2:-0.03}"
+    
+    # Primeiro aplica as cores usando echo -e e captura o resultado
+    local colored_text
+    colored_text=$(echo -e "$text")
+    
+    # Aplica o efeito typewriter usando um loop simples
+    for (( i=0; i<${#colored_text}; i++ )); do
+        char="${colored_text:$i:1}"
+        printf "%s" "$char"
+        
+        # Adiciona delay apenas para caracteres alfabéticos, numéricos e símbolos visíveis
+        if [[ "$char" =~ [A-Za-z0-9[:punct:]🚀🎓💼▶📚🎯🏢⭐] ]]; then
+            sleep "$delay"
+        fi
+    done
+    echo
+}
+
 # Função para criar loading animado
 loading() {
     local duration="${1:-3}"

@@ -14,12 +14,12 @@ mostrar_experiencia() {
     shift 4
     local atividades=("$@")
     
-    echo -e "${BOLD}${cor_cargo}🏢 $cargo${RESET}"
-    echo -e "${WHITE}📍 $empresa | ⏰ $periodo${RESET}"
+    typewriter_colored "${BOLD}${cor_cargo}🏢 $cargo${RESET}" 0.03
+    typewriter_colored "${WHITE}📍 $empresa | ⏰ $periodo${RESET}" 0.02
     separator "─" 50 "$DIM"
     
     for atividade in "${atividades[@]}"; do
-        echo -e "   ${GREEN}▶${RESET} $atividade"
+        typewriter_colored "   ${GREEN}▶${RESET} $atividade" 0.02
     done
     echo
 }
