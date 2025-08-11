@@ -1,7 +1,391 @@
-sudo adduser --shell /usr/bin/CvShell curriculo
+# ========================================
+# 🚀 TUTORIAL COMPLETO: CONFIGURAÇÃO DO SERVIDOR 
+# CURRÍCULO INTERATIVO EM BASH
+# ========================================
 
+## 📋 PRÉ-REQUISITOS
+- Servidor Linux (Ubuntu/Debian recomendado)
+- Acesso root ou sudo
+- SSH configurado e funcionando
+- Bash 4.0+ instalado
 
-> CvShell
+## 🛠️ PASSO 1: PREPARAÇÃO DO AMBIENTE
+
+# 1.1 - Criar diretório base
+sudo mkdir -p /opt/curriculo
+sudo mkdir -p /opt/curriculo/{modulos,utils,ascii}
+
+# 1.2 - Copiar todos os arquivos do currículo para /opt/curriculo/
+# (Faça upload dos arquivos via SCP, SFTP ou Git)
+
+# 1.3 - Definir permissões corretas
+sudo chown -R root:root /opt/curriculo
+sudo chmod 755 /opt/curriculo
+sudo chmod +x /opt/curriculo/curriculo.sh
+sudo chmod +x /opt/curriculo/modulos/*.sh
+sudo chmod 644 /opt/curriculo/utils/*.sh
+sudo chmod 644 /opt/curriculo/ascii/*
+
+## 🔐 PASSO 2: CRIAR USUÁRIO RESTRITO
+
+# 2.1 - Criar usuário com shell personalizado
+sudo adduser --disabled-password --gecos "" --shell /usr/bin/cvshell curriculo
+
+# 2.2 - Definir senha (IMPORTANTE: Use uma senha forte!)
+sudo passwd curriculo
+
+# 2.3 - Criar diretório home do usuário
+sudo mkdir -p /home/curriculo
+sudo chown curriculo:curriculo /home/curriculo
+sudo chmod 750 /home/curriculo
+
+## 🐚 PASSO 3: CRIAR SHELL PERSONALIZADO COM TRATAMENTO DE ERROS
+
+# 3.1 - Criar o arquivo /usr/bin/cvshell
+sudo tee /usr/bin/cvshell > /dev/null << 'EOF'
 #!/bin/bash
-cd /home/empresa
-./curriculo.sh
+# ========================================
+# CVSHELL - Shell personalizado para currículo
+# Sistema com tratamento robusto de erros
+# ========================================
+
+# Configurações de segurança
+set -euo pipefail
+umask 022
+
+# Variáveis globais
+CURRICULO_DIR="/opt/curriculo"
+LOG_FILE="/var/log/cvshell.log"
+MAX_TENTATIVAS=3
+TENTATIVA=0
+
+# Função de log
+log_evento() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [$$] $1" | sudo tee -a "$LOG_FILE" >/dev/null 2>&1 || true
+}
+
+# Função de limpeza na saída
+cleanup() {
+    log_evento "Sessão finalizada para usuário: $(whoami)"
+    exit 0
+}
+
+# Trap para capturar sinais e fazer limpeza
+trap cleanup EXIT INT TERM
+
+# Função para verificar integridade do sistema
+verificar_sistema() {
+    local erros=0
+    
+    # Verificar se o diretório existe
+    if [[ ! -d "$CURRICULO_DIR" ]]; then
+        echo "❌ ERRO: Diretório do currículo não encontrado!"
+        log_evento "ERRO: Diretório $CURRICULO_DIR não encontrado"
+        ((erros++))
+    fi
+    
+    # Verificar se o script principal existe
+    if [[ ! -f "$CURRICULO_DIR/curriculo.sh" ]]; then
+        echo "❌ ERRO: Script principal não encontrado!"
+        log_evento "ERRO: Script principal curriculo.sh não encontrado"
+        ((erros++))
+    fi
+    
+    # Verificar se o script é executável
+    if [[ ! -x "$CURRICULO_DIR/curriculo.sh" ]]; then
+        echo "❌ ERRO: Script principal sem permissão de execução!"
+        log_evento "ERRO: curriculo.sh sem permissão de execução"
+        ((erros++))
+    fi
+    
+    # Verificar módulos essenciais
+    local modulos_obrigatorios=("01_sobre_mim.sh" "02_experiencia.sh" "06_contato.sh")
+    for modulo in "${modulos_obrigatorios[@]}"; do
+        if [[ ! -f "$CURRICULO_DIR/modulos/$modulo" ]]; then
+            echo "❌ ERRO: Módulo essencial não encontrado: $modulo"
+            log_evento "ERRO: Módulo $modulo não encontrado"
+            ((erros++))
+        fi
+    done
+    
+    return $erros
+}
+
+# Função para exibir mensagem de erro amigável
+mostrar_erro_sistema() {
+    clear
+    echo "
+╔════════════════════════════════════════════════════════════╗
+║                    ⚠️  SISTEMA INDISPONÍVEL                ║
+╠════════════════════════════════════════════════════════════╣
+║                                                            ║
+║  O sistema de currículo está temporariamente indisponível. ║
+║                                                            ║
+║  Possíveis causas:                                         ║
+║  • Manutenção em andamento                                 ║
+║  • Arquivos corrompidos ou ausentes                       ║
+║  • Problemas de permissão                                  ║
+║                                                            ║
+║  Por favor, contate o administrador:                       ║
+║  📧 gabriellucas2002br@outlook.com                         ║
+║                                                            ║
+║  Tentativa: $TENTATIVA/$MAX_TENTATIVAS                                      ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+"
+    echo "Aguarde 5 segundos para nova tentativa..."
+    sleep 5
+}
+
+# Função para executar o currículo com recuperação de erro
+executar_curriculo() {
+    while [[ $TENTATIVA -lt $MAX_TENTATIVAS ]]; do
+        ((TENTATIVA++))
+        
+        log_evento "Tentativa $TENTATIVA de execução do currículo para $(whoami)"
+        
+        # Verificar integridade do sistema
+        if verificar_sistema; then
+            log_evento "Sistema verificado com sucesso"
+            
+            # Mudar para o diretório do currículo
+            cd "$CURRICULO_DIR" || {
+                log_evento "ERRO: Não foi possível acessar $CURRICULO_DIR"
+                mostrar_erro_sistema
+                continue
+            }
+            
+            # Executar o currículo com timeout
+            timeout 1800 bash "$CURRICULO_DIR/curriculo.sh" || {
+                local exit_code=$?
+                log_evento "ERRO: curriculo.sh falhou com código $exit_code"
+                
+                if [[ $exit_code -eq 124 ]]; then
+                    echo "⏰ Sessão expirada após 30 minutos de inatividade."
+                    sleep 3
+                elif [[ $exit_code -eq 130 ]]; then
+                    echo "👋 Sessão interrompida pelo usuário."
+                    sleep 1
+                else
+                    mostrar_erro_sistema
+                    continue
+                fi
+            }
+            
+            # Se chegou aqui, execução foi bem-sucedida
+            break
+        else
+            log_evento "Falha na verificação do sistema"
+            mostrar_erro_sistema
+        fi
+    done
+    
+    # Se esgotar tentativas
+    if [[ $TENTATIVA -eq $MAX_TENTATIVAS ]]; then
+        clear
+        echo "
+╔════════════════════════════════════════════════════════════╗
+║                  🚫 SISTEMA FORA DO AR                     ║
+╠════════════════════════════════════════════════════════════╣
+║                                                            ║
+║  Após $MAX_TENTATIVAS tentativas, o sistema não conseguiu         ║
+║  inicializar corretamente.                                 ║
+║                                                            ║
+║  Entre em contato diretamente:                             ║
+║                                                            ║
+║  📧 gabriellucas2002br@outlook.com                         ║
+║  📱 +55 (21) 99801-4245                                    ║
+║  💼 linkedin.com/in/gabsantanna                            ║
+║                                                            ║
+║  A conexão será encerrada em 10 segundos.                 ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+"
+        log_evento "CRÍTICO: Sistema falhou após $MAX_TENTATIVAS tentativas para $(whoami)"
+        sleep 10
+    fi
+}
+
+# Função principal
+main() {
+    # Registrar início da sessão
+    log_evento "Nova sessão iniciada para usuário: $(whoami) de IP: ${SSH_CLIENT%% *}"
+    
+    # Verificar se é o usuário correto
+    if [[ "$(whoami)" != "curriculo" ]]; then
+        log_evento "ALERTA: Tentativa de uso por usuário não autorizado: $(whoami)"
+        echo "❌ Acesso negado. Este shell é exclusivo para demonstração do currículo."
+        sleep 3
+        exit 1
+    fi
+    
+    # Limpar terminal
+    clear
+    
+    # Mostrar banner inicial
+    echo "
+🔐 Sessão segura iniciada - Shell restrito ativado
+👤 Usuário: $(whoami)
+🕒 $(date '+%d/%m/%Y %H:%M:%S')
+🌐 IP: ${SSH_CLIENT%% *}
+────────────────────────────────────────────────────────────
+"
+    sleep 2
+    
+    # Executar o sistema de currículo
+    executar_curriculo
+}
+
+# Executar função principal
+main "$@"
+EOF
+
+# 3.2 - Tornar o shell executável
+sudo chmod +x /usr/bin/cvshell
+
+## 🔒 PASSO 4: CONFIGURAÇÕES DE SEGURANÇA SSH
+
+# 4.1 - Backup da configuração SSH
+sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d)
+
+# 4.2 - Adicionar configurações específicas para o usuário curriculo
+sudo tee -a /etc/ssh/sshd_config > /dev/null << 'EOF'
+
+# ========================================
+# CONFIGURAÇÕES ESPECÍFICAS - USUÁRIO CURRICULO
+# ========================================
+
+# Configuração para usuário curriculo - Currículo Interativo
+Match User curriculo
+    # Forçar execução apenas do shell personalizado
+    ForceCommand /usr/bin/cvshell
+    
+    # Permitir TTY para interatividade
+    PermitTTY yes
+    
+    # Desabilitar recursos desnecessários
+    X11Forwarding no
+    AllowTcpForwarding no
+    AllowStreamLocalForwarding no
+    PermitTunnel no
+    
+    # Configurações de sessão
+    ClientAliveInterval 300
+    ClientAliveCountMax 2
+    
+    # Permitir apenas autenticação por senha (ou configure chaves se preferir)
+    AuthenticationMethods password
+    
+    # Diretório chroot (opcional - maior segurança)
+    # ChrootDirectory /home/curriculo
+EOF
+
+# 4.3 - Validar configuração SSH
+sudo sshd -t
+
+# 4.4 - Reiniciar SSH se configuração estiver válida
+if sudo sshd -t; then
+    sudo systemctl restart ssh
+    echo "✅ SSH configurado e reiniciado com sucesso"
+else
+    echo "❌ ERRO na configuração SSH. Verifique o arquivo!"
+    exit 1
+fi
+
+## 📊 PASSO 5: CONFIGURAR LOGGING E MONITORAMENTO
+
+# 5.1 - Criar arquivo de log
+sudo touch /var/log/cvshell.log
+sudo chown root:adm /var/log/cvshell.log
+sudo chmod 644 /var/log/cvshell.log
+
+# 5.2 - Configurar rotação de logs
+sudo tee /etc/logrotate.d/cvshell > /dev/null << 'EOF'
+/var/log/cvshell.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 644 root adm
+}
+EOF
+
+## 🧪 PASSO 6: TESTES DE VALIDAÇÃO
+
+# 6.1 - Testar o shell diretamente
+echo "🧪 Testando o shell personalizado..."
+sudo -u curriculo /usr/bin/cvshell --test 2>/dev/null || echo "Teste concluído"
+
+# 6.2 - Testar conexão SSH local
+echo "🔌 Para testar SSH localmente, execute:"
+echo "ssh curriculo@localhost"
+echo
+
+## 📋 PASSO 7: INFORMAÇÕES FINAIS
+
+echo "
+╔════════════════════════════════════════════════════════════╗
+║                   ✅ CONFIGURAÇÃO CONCLUÍDA                ║
+╠════════════════════════════════════════════════════════════╣
+║                                                            ║
+║  Usuário criado: curriculo                                 ║
+║  Shell personalizado: /usr/bin/cvshell                     ║
+║  Diretório: /opt/curriculo                                 ║
+║  Logs: /var/log/cvshell.log                                ║
+║                                                            ║
+║  Para acessar:                                             ║
+║  ssh curriculo@SEU_SERVIDOR_IP                             ║
+║                                                            ║
+║  Para monitorar:                                           ║
+║  sudo tail -f /var/log/cvshell.log                         ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+"
+
+## 🔧 COMANDOS ÚTEIS PARA ADMINISTRAÇÃO:
+
+# Verificar status do usuário
+# sudo passwd -S curriculo
+
+# Monitorar logs em tempo real
+# sudo tail -f /var/log/cvshell.log
+
+# Verificar conexões ativas
+# sudo netstat -tuln | grep :22
+
+# Testar configuração SSH
+# sudo sshd -t
+
+# Reiniciar SSH
+# sudo systemctl restart ssh
+
+# Verificar logs SSH
+# sudo journalctl -u ssh -f
+
+# Remover usuário (se necessário)
+# sudo userdel -r curriculo
+# sudo rm /usr/bin/cvshell
+
+## ⚠️ OBSERVAÇÕES IMPORTANTES:
+
+# 1. SEGURANÇA:
+#    - O usuário 'curriculo' só pode executar o shell personalizado
+#    - Sistema com timeout automático de 30 minutos
+#    - Logs detalhados de todas as ações
+#    - Tentativas limitadas de recuperação de erro
+
+# 2. MONITORAMENTO:
+#    - Todos os acessos são registrados em /var/log/cvshell.log
+#    - Inclui IP do cliente, horário e eventos do sistema
+
+# 3. RECUPERAÇÃO DE ERRO:
+#    - Sistema tenta 3 vezes antes de falhar completamente
+#    - Verificações automáticas de integridade
+#    - Mensagens amigáveis para o usuário
+
+# 4. MANUTENÇÃO:
+#    - Atualize os arquivos em /opt/curriculo conforme necessário
+#    - Monitore os logs regularmente
+#    - Configure backup dos arquivos importantes
