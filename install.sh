@@ -7,13 +7,13 @@
 set -euo pipefail
 
 # Cores para output
-RED=\'\033[0;31m\'
-GREEN=\'\033[0;32m\'
-YELLOW=\'\033[1;33m\'
-BLUE=\'\033[0;34m\'
-CYAN=\'\033[0;36m\'
-BOLD=\'\033[1m\'
-RESET=\'\033[0m\'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
 
 # Variáveis globais
 INSTALL_DIR="/opt/curriculo"
@@ -54,8 +54,7 @@ check_root() {
 show_banner() {
     clear
     echo -e "${CYAN}${BOLD}"
-    echo "
- echo " 🚀 INSTALADOR CURRÍCULO INTERATIVO"
+    echo " 🚀 INSTALADOR CURRÍCULO INTERATIVO"
     echo " ──────────────────────────────────────────────────────────"
     echo " Configuração automática de servidor para demonstração"
     echo " de currículo em Bash com máxima segurança"
@@ -84,26 +83,26 @@ check_dependencies() {
 
 # Função para criar usuário restrito
 create_user() {
-    log_info "Criando usuário restrito \'$USER_NAME\'..."
+    log_info "Criando usuário restrito '$USER_NAME'..."
     if id "$USER_NAME" &>/dev/null; then
-        log_warning "Usuário \'$USER_NAME\' já existe. Pulando criação."
+        log_warning "Usuário '$USER_NAME' já existe. Pulando criação."
     else
         sudo useradd -m -s "$SHELL_PATH" "$USER_NAME"
         if [ $? -ne 0 ]; then
-            log_error "Falha ao criar usuário \'$USER_NAME\'."
+            log_error "Falha ao criar usuário '$USER_NAME'."
             exit 1
         fi
-        log_success "Usuário \'$USER_NAME\' criado com sucesso."
+        log_success "Usuário '$USER_NAME' criado com sucesso."
     fi
 
-    log_info "Definindo senha para o usuário \'$USER_NAME\'..."
+    log_info "Definindo senha para o usuário '$USER_NAME'..."
     echo "$USER_NAME:curriculo" | sudo chpasswd
     log_success "Senha definida com sucesso. Use 'curriculo' para acessar."
 }
 
 # Função para configurar o shell customizado
 setup_shell() {
-    log_info "Configurando shell customizado em \'$SHELL_PATH\'..."
+    log_info "Configurando shell customizado em '$SHELL_PATH'..."
     
     # Conteúdo do cvshell
     local shell_script="#!/bin/bash
@@ -143,7 +142,7 @@ exit 0
     sudo chmod +x "$SHELL_PATH"
 
     if ! grep -q "$SHELL_PATH" /etc/shells; then
-        log_info "Adicionando \'$SHELL_PATH\' a /etc/shells..."
+        log_info "Adicionando '$SHELL_PATH' a /etc/shells..."
         echo "$SHELL_PATH" | sudo tee -a /etc/shells > /dev/null
     fi
 
@@ -152,9 +151,9 @@ exit 0
 
 # Função para clonar ou atualizar o repositório
 setup_repo() {
-    log_info "Configurando repositório do currículo em \'$INSTALL_DIR\'..."
+    log_info "Configurando repositório do currículo em '$INSTALL_DIR'..."
     if [ -d "$INSTALL_DIR" ]; then
-        log_warning "Diretório \'$INSTALL_DIR\' já existe. Sincronizando com o repositório..."
+        log_warning "Diretório '$INSTALL_DIR' já existe. Sincronizando com o repositório..."
         sudo git -C "$INSTALL_DIR" pull
     else
         sudo git clone https://github.com/GabrielDSant/Curriculo.git "$INSTALL_DIR"
@@ -177,13 +176,13 @@ setup_ssh() {
     sudo cp "$sshd_config" "${sshd_config}.bak_$(date +%F)"
 
     # Configurações de segurança
-    sudo sed -i 's/^#?PermitRootLogin.*/PermitRootLogin no/' "$sshd_config"
-    sudo sed -i 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/' "$sshd_config"
-    sudo sed -i 's/^#?ChallengeResponseAuthentication.*/ChallengeResponseAuthentication no/' "$sshd_config"
-    sudo sed -i 's/^#?UsePAM.*/UsePAM yes/' "$sshd_config"
-    sudo sed -i 's/^#?X11Forwarding.*/X11Forwarding no/' "$sshd_config"
-    sudo sed -i 's/^#?PrintMotd.*/PrintMotd no/' "$sshd_config"
-    sudo sed -i 's/^#?AllowTcpForwarding.*/AllowTcpForwarding no/' "$sshd_config"
+    sudo sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' "$sshd_config"
+    sudo sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' "$sshd_config"
+    sudo sed -i 's/^#\?ChallengeResponseAuthentication.*/ChallengeResponseAuthentication no/' "$sshd_config"
+    sudo sed -i 's/^#\?UsePAM.*/UsePAM yes/' "$sshd_config"
+    sudo sed -i 's/^#\?X11Forwarding.*/X11Forwarding no/' "$sshd_config"
+    sudo sed -i 's/^#\?PrintMotd.*/PrintMotd no/' "$sshd_config"
+    sudo sed -i 's/^#\?AllowTcpForwarding.*/AllowTcpForwarding no/' "$sshd_config"
 
     # Restringir usuário ao seu shell
     if ! grep -q "Match User $USER_NAME" "$sshd_config"; then
@@ -262,7 +261,6 @@ main() {
     # Inicialização
     check_root
     sudo touch "$LOG_FILE"
-    sudo chown "$USER":"$USER" "$LOG_FILE"
     
     show_banner
     log_info "Iniciando instalação do Currículo Interativo..."
